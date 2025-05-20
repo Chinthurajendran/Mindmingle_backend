@@ -30,3 +30,11 @@ class UserLoginModel(BaseModel):
 
 class BlogecreateRequest(BaseModel):
     description: str
+
+
+class commentRequest(BaseModel):
+    comments: str
+
+class ProfileCreateRequest(BaseModel):
+    username: str
+    email: str

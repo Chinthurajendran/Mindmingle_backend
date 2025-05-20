@@ -47,7 +47,14 @@ class OTPVerification(SQLModel, table=True):
 
     def __repr__(self):
         return f"<OTPVerification {self.message}>"
-    
+
+class Comment(SQLModel):
+    comment_uid: uuid.UUID = Field(default_factory=uuid.uuid4)
+    user_id: uuid.UUID
+    username: str
+    user_photo: Optional[str] = Field(default=None)
+    comment: str
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
 
 class BlogCreate(SQLModel, table=True):
     __tablename__ = "blogcreate"
@@ -64,6 +71,21 @@ class BlogCreate(SQLModel, table=True):
     role: str = Field(default="user", max_length=20, nullable=True)
     delete_status: bool = Field(default=False)
 
+
+    likes: List[uuid.UUID] = Field(
+        default_factory=list,
+        sa_column=Column(pg.ARRAY(pg.UUID(as_uuid=True)), nullable=False, default=[])
+    )
+    dislikes: List[uuid.UUID] = Field(
+        default_factory=list,
+        sa_column=Column(pg.ARRAY(pg.UUID(as_uuid=True)), nullable=False, default=[])
+    )
+
+    comments: List[Comment] = Field(
+        default_factory=list,
+        sa_column=Column(pg.JSONB, nullable=False, default=[])
+    )
+
     create_at: datetime = Field(
         default_factory=datetime.utcnow,
         sa_column=Column(pg.TIMESTAMP, nullable=False)
@@ -73,15 +95,6 @@ class BlogCreate(SQLModel, table=True):
         sa_column=Column(pg.TIMESTAMP, nullable=False)
     )
 
-    # Likes and dislikes as arrays of UUIDs
-    likes: List[uuid.UUID] = Field(
-        default_factory=list,
-        sa_column=Column(pg.ARRAY(pg.UUID(as_uuid=True)), nullable=False, default=[])
-    )
-    dislikes: List[uuid.UUID] = Field(
-        default_factory=list,
-        sa_column=Column(pg.ARRAY(pg.UUID(as_uuid=True)), nullable=False, default=[])
-    )
 
     def __repr__(self):
         return f"<BlogCreate {self.blog_uid}>"
