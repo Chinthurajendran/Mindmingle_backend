@@ -20,6 +20,7 @@ from typing import Optional
 from botocore.exceptions import ClientError
 import mimetypes
 import asyncio
+from fastapi_mail import MessageSchema
 
 load_dotenv()
 
@@ -50,7 +51,7 @@ class Validation:
             return False
         if not re.match(r"^[A-Za-z0-9\s.,'’\-]+$", text):
             return False
-        if len(text.strip().split()) < 50: 
+        if len(text.strip().split()) < 50:
             return False
         return True
 
@@ -159,23 +160,24 @@ class UserService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to upload file '{file.filename}' to S3: {e.response['Error']['Message']}"
             )
-        
+
     async def delete_folder_contents(self, bucket_name, folder_name):
         try:
 
-            response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=folder_name)
+            response = s3_client.list_objects_v2(
+                Bucket=bucket_name, Prefix=folder_name)
 
             if 'Contents' not in response:
                 return True
 
             file_keys = [{'Key': obj['Key']} for obj in response['Contents']]
 
-            s3_client.delete_objects(Bucket=bucket_name, Delete={'Objects': file_keys})
+            s3_client.delete_objects(Bucket=bucket_name, Delete={
+                                     'Objects': file_keys})
 
             return True
         except ClientError as e:
             return False
-
 
     async def create_bloge(
         self,
@@ -235,12 +237,12 @@ class UserService:
 
             if not blog_record:
                 raise HTTPException(status_code=404, detail="Blog not found")
-            
+
             # def extract_folder_name(url):
             #     parts = url.split("/")
             #     folder_name = "/".join(parts[3:-1])
             #     return folder_name
-            
+
             # folder_name = extract_folder_name(blog_record.photo)
 
             # deletion = await self.delete_folder_contents(BUCKET_NAME, folder_name)
@@ -265,7 +267,8 @@ class UserService:
             raise
         except Exception as e:
             await session.rollback()
-            raise HTTPException(status_code=500, detail=f"Error updating blog: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail=f"Error updating blog: {str(e)}")
 
     async def profile_update(
         self,
@@ -290,9 +293,9 @@ class UserService:
             #         parts = url.split("/")
             #         folder_name = "/".join(parts[3:-1])
             #         return folder_name
-                
+
             #     folder_name = extract_folder_name(user.image)
-        
+
             #     deletion = await self.delete_folder_contents(BUCKET_NAME, folder_name)
             #     if not deletion:
             #         raise HTTPException(
@@ -302,7 +305,6 @@ class UserService:
 
             if not user:
                 return {"error": "User not found"}
-        
 
             for field in user_data.__dict__:
                 setattr(user, field, getattr(user_data, field))

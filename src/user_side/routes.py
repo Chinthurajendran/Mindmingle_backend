@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, Form
-from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.database import get_session
 from fastapi.responses import JSONResponse
 from .service import *
@@ -11,6 +10,7 @@ from sqlalchemy import and_
 from sqlalchemy.future import select
 from fastapi.encoders import jsonable_encoder
 import traceback
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 logger = logging.getLogger(__name__)
@@ -33,23 +33,7 @@ async def Emailvarfication(user_data: Emailvalidation, session: AsyncSession = D
             status_code=status.HTTP_403_FORBIDDEN, detail="Email already exists")
 
     code = random_code()
-
-    message = MessageSchema(
-        subject="Email Verification Code",
-        recipients=[email],
-        body=(
-            f"Hello,\n\n"
-            f"Thank you for registering with us!\n\n"
-            f"To verify your email address, please use the following One-Time Password (OTP):\n\n"
-            f"OTP: {code}\n\n"
-            f"This code is valid for the next 2 minutes.\n\n"
-            f"If you did not request this, please ignore this email.\n\n"
-            f"Best regards,\n"
-            f"Your Team"
-        ),
-        subtype="plain"
-    )
-
+    message = generate_verification_email(email, code)
     fm = FastMail(mail_config)
     try:
         await fm.send_message(message)
@@ -92,22 +76,7 @@ async def Resendotp(user_data: Emailvalidation, session: AsyncSession = Depends(
             status_code=404, detail="Email not registered for verification.")
 
     code = random_code()
-
-    message = MessageSchema(
-        subject="Email Verification Code",
-        recipients=[email],
-        body=(
-            f"Hello,\n\n"
-            f"Thank you for registering with us!\n\n"
-            f"To verify your email address, please use the following One-Time Password (OTP):\n\n"
-            f"OTP: {code}\n\n"
-            f"This code is valid for the next 2 minutes.\n\n"
-            f"If you did not request this, please ignore this email.\n\n"
-            f"Best regards,\n"
-            f"Your Team"
-        ),
-        subtype="plain"
-    )
+    message = generate_verification_email(email, code)
 
     try:
         fm = FastMail(mail_config)
@@ -380,11 +349,14 @@ async def create_blog(
 
 
 
-@auth_router.get("/bloge_list_profile", response_model=dict)
-async def bloge_list_profile(session: AsyncSession = Depends(get_session)):
+@auth_router.get("/bloge_list_profile/{user_id}", response_model=dict)
+async def bloge_list_profile(user_id: UUID,session: AsyncSession = Depends(get_session)):
     try:
         result = await session.execute(
-            select(BlogCreate).where(BlogCreate.delete_status == False )) 
+            select(BlogCreate).where(
+                (BlogCreate.delete_status == False) & (BlogCreate.user_id == user_id)
+            )
+        )
         blog = result.scalars().all()
 
         bloges = []
