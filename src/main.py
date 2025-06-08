@@ -23,7 +23,8 @@ app.include_router(admin_router, prefix="/admin_auth", tags=["Admin Authenticati
 origins = [
     "http://localhost:5173",        
     "https://www.mindmingle.fun", 
-    "https://api.mindmingle.fun"  
+    "https://api.mindmingle.fun",
+    "https://mindmingle-backend.onrender.com"
 ]
 
 app.add_middleware(
