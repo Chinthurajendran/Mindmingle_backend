@@ -16,8 +16,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
-app.include_router(admin_router, prefix="/admin_auth", tags=["Admin Authentication"])
+# app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+# app.include_router(admin_router, prefix="/admin_auth", tags=["Admin Authentication"])
 
 
 origins = [
@@ -34,3 +34,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+
+app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+app.include_router(admin_router, prefix="/admin_auth", tags=["Admin Authentication"])
